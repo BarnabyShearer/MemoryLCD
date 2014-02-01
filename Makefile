@@ -2,6 +2,7 @@ TARGET=main.hex
 EXECUTABLE=main.elf
 
 CC=arm-none-eabi-gcc
+CXX=arm-none-eabi-g++
 LD=arm-none-eabi-gcc
 AR=arm-none-eabi-ar
 AS=arm-none-eabi-as
@@ -10,7 +11,7 @@ OD=arm-none-eabi-objdump
 
 BIN=$(CP) -O ihex
 
-DEFS = -DDEBUG -DUSE_FULL_ASSERT -DUSE_STDPERIPH_DRIVER -DSTM32F4XX -DSTM32F40_41xxx -DHSE_VALUE=8000000 -DUSE_STARTUP_FILES
+DEFS = -DDEBUG -DUSE_FULL_ASSERT -DUSE_STDPERIPH_DRIVER -DSTM32F4XX -DSTM32F40_41xxx -DHSE_VALUE=8000000 -DUSE_STARTUP_FILES -DARDUINO=100
 
 MCU = cortex-m4
 MCFLAGS = -mcpu=$(MCU) -mthumb -mlittle-endian -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb-interwork
@@ -22,13 +23,18 @@ STM32_INCLUDES = \
 
 OPTIMIZE = -Os
 DEBUG = -g3 -gdwarf-2
-WARN = -Wall -Wextra -Wimplicit-function-declaration -Wredundant-decls -Wstrict-prototypes -Wundef -Wshadow -Werror-implicit-function-declaration
-
-CFLAGS = -std=gnu11 $(MCFLAGS) $(OPTIMIZE) $(DEBUG) $(WARN) $(DEFS) -I./ $(STM32_INCLUDES) 
+WARN = -Wall -Wextra -Wredundant-decls -Wundef -Wshadow -Werror-implicit-function-declaration
+CWARN = -Wimplicit-function-declaration -Wstrict-prototypes
+CFLAGS = -std=gnu11 $(MCFLAGS) $(OPTIMIZE) $(DEBUG) $(WARN) $(CWARN) $(DEFS) -I./ $(STM32_INCLUDES)
+CXXFLAGS = $(MCFLAGS) $(OPTIMIZE) $(DEBUG) $(WARN) $(DEFS) -I./ $(STM32_INCLUDES) -include cstdlib
 AFLAGS = $(MCFLAGS)
 LDFLAGS = -T ldscripts/libs.ld -T ldscripts/mem.ld -T ldscripts/sections.ld --specs=nano.specs --specs=rdimon.specs
 
 OBJECTS = main.o \
+            Arduino.o \
+            Print.o \
+			MemoryLCD.o \
+			libs/Adafruit-GFX-Library/Adafruit_GFX.o \
 			libs/_sbrk.o \
 			libs/syscalls.o \
 			libs/CMSIS/src/startup_cm.o \
@@ -68,7 +74,7 @@ $(TARGET): $(EXECUTABLE)
 	$(CP) -O ihex $^ $@
 
 $(EXECUTABLE): $(OBJECTS)
-	$(LD) $(CFLAGS) $(LDFLAGS) $^ -o $@
+	$(CXX) $(CFLAGS) $(LDFLAGS) $^ -o $@
 
 clean:
 	rm -f $(TARGET) $(EXECUTABLE) $(OBJECTS)
